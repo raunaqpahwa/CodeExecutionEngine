@@ -2,39 +2,32 @@ package com.raunaqpahwa.codeexecutor.controllers;
 
 import com.raunaqpahwa.codeexecutor.models.Code;
 import com.raunaqpahwa.codeexecutor.models.CodeResult;
-import com.raunaqpahwa.codeexecutor.services.CodeExecutionStrategy;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.raunaqpahwa.codeexecutor.models.Constants;
+import com.raunaqpahwa.codeexecutor.services.impl.CodeExecutionServiceFactoryImpl;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(method = RequestMethod.POST)
 class ExecutionController {
 
-    @Autowired
-    @Qualifier("PythonCodeExecutionStrategy")
-    CodeExecutionStrategy pythonCodeExecutionStrategy;
+    private final CodeExecutionServiceFactoryImpl codeExecutionFactory;
 
-    @Autowired
-    @Qualifier("JavaCodeExecutionStrategy")
-    CodeExecutionStrategy javaCodeExecutionStrategy;
-
-    @Autowired
-    @Qualifier("JavascriptCodeExecutionStrategy")
-    CodeExecutionStrategy javascriptCodeExecutionStrategy;
-
-    @RequestMapping(method = RequestMethod.POST, value = "/python")
-    public CodeResult runPythonCode(@RequestBody Code code) {
-        return pythonCodeExecutionStrategy.runCode(code.getRawCode());
+    ExecutionController(CodeExecutionServiceFactoryImpl codeExecutionFactory) {
+        this.codeExecutionFactory = codeExecutionFactory;
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "/java")
-    public CodeResult runJavaCode(@RequestBody Code code) {
-        return javaCodeExecutionStrategy.runCode(code.getRawCode());
+    @RequestMapping(value = "/python")
+    public CodeResult executePythonCode(@RequestBody Code code) {
+        return codeExecutionFactory.executeCode(Constants.EXECUTE_PYTHON, code.getRawCode());
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "/javascript")
-    public CodeResult runJavascriptCode(@RequestBody Code code) {
-        return javascriptCodeExecutionStrategy.runCode(code.getRawCode());
+    @RequestMapping(value = "/java")
+    public CodeResult executeJavaCode(@RequestBody Code code) {
+        return codeExecutionFactory.executeCode(Constants.EXECUTE_JAVA, code.getRawCode());
+    }
+
+    @RequestMapping(value = "/javascript")
+    public CodeResult executeJavascriptCode(@RequestBody Code code) {
+        return codeExecutionFactory.executeCode(Constants.EXECUTE_JAVASCRIPT, code.getRawCode());
     }
 }

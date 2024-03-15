@@ -1,4 +1,4 @@
-package com.raunaqpahwa.codeexecutor.config;
+package com.raunaqpahwa.codeexecutor.configs;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
@@ -7,8 +7,6 @@ import com.github.dockerjava.transport.DockerHttpClient;
 import com.github.dockerjava.zerodep.ZerodepDockerHttpClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.time.Duration;
 
 @Configuration
 public class DockerConfig {

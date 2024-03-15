@@ -71,7 +71,7 @@ esac
 
 if [ -z "$JAVA_HOME" ] ; then
   if [ -r /etc/gentoo-release ] ; then
-    JAVA_HOME=$(java-config --jre-home)
+    JAVA_HOME=$(java-configs --jre-home)
   fi
 fi
 
