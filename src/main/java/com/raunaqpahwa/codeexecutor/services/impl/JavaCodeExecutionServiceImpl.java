@@ -3,6 +3,7 @@ package com.raunaqpahwa.codeexecutor.services.impl;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.raunaqpahwa.codeexecutor.models.Constants;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.CodeExecutionService;
 import com.raunaqpahwa.codeexecutor.services.ContainerManagerService;
 import org.apache.commons.text.StringEscapeUtils;
@@ -15,7 +16,7 @@ public class JavaCodeExecutionServiceImpl extends CodeExecutionService {
 
     private static final int TIMEOUT = 3;
 
-    private static final String CONTAINER_TYPE = Constants.CREATE_JAVA;
+    private static final String CONTAINER_TYPE = DockerContainer.Language.JAVA.name();
 
     private static final Function<String, String> escapeFunc = StringEscapeUtils::escapeJava;
 
@@ -40,10 +41,10 @@ public class JavaCodeExecutionServiceImpl extends CodeExecutionService {
 
     @Override
     public ExecCreateCmdResponse createExecCmd(String containerId, String rawCode) {
-        String createFileCmd = String.format("echo \"%s\" > %s", rawCode, Constants.JAVA_FILE);
-        String compileFileCmd = String.format("javac %s", Constants.JAVA_FILE);
-        String runFileCmd = String.format("java %s", Constants.JAVA_FILE_COMPILED);
-        String finalCmd = String.format("%s; %s; %s", createFileCmd, compileFileCmd, runFileCmd);
+        var createFileCmd = String.format("echo \"%s\" > %s", rawCode, Constants.JAVA_FILE);
+        var compileFileCmd = String.format("javac %s", Constants.JAVA_FILE);
+        var runFileCmd = String.format("java %s", Constants.JAVA_FILE_COMPILED);
+        var finalCmd = String.format("%s; %s; %s", createFileCmd, compileFileCmd, runFileCmd);
         return client.execCreateCmd(containerId)
                 .withAttachStdout(true)
                 .withAttachStderr(true)

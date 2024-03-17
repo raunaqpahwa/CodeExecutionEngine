@@ -14,7 +14,6 @@ public class CodeExecutorResultCallback extends ResultCallbackTemplate<CodeExecu
         this.codeResultBuilder = codeResultBuilder;
     }
 
-
     @Override
     public void onNext(Frame object) {
         if (StreamType.STDOUT.equals(object.getStreamType())) {

@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.raunaqpahwa.codeexecutor.models.CodeResult;
 import com.raunaqpahwa.codeexecutor.models.Constants;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.callbacks.CodeExecutorResultCallback;
 
 import java.util.concurrent.TimeUnit;
@@ -41,16 +42,16 @@ public abstract class CodeExecutionService {
         if (codeSize > Constants.CODE_SIZE_LIMIT) {
             // TODO: Throw exception if code size beyond limit
         }
-        return executeCodeInContainer(container.getId(), escapeFunc.apply(rawCode));
+        return executeCodeInContainer(container, escapeFunc.apply(rawCode));
     }
 
-    public CodeResult executeCodeInContainer(String containerId, String rawCode) {
+    private CodeResult executeCodeInContainer(DockerContainer container, String rawCode) {
         var codeResultBuilder = new CodeResult.Builder();
         var resultCallbackTemplate = new CodeExecutorResultCallback(codeResultBuilder);
-        var execCreateCmdResponse = createExecCmd(containerId, rawCode);
+        var execCreateCmdResponse = createExecCmd(container.getContainer().getId(), rawCode);
         var timeout = getTimeout();
 
-        boolean result = false;
+        var result = false;
         try {
             result = client.execStartCmd(execCreateCmdResponse.getId()).exec(resultCallbackTemplate)
                     .awaitCompletion(timeout, TimeUnit.SECONDS);
@@ -59,6 +60,7 @@ public abstract class CodeExecutionService {
         }
 
         if (!result) {
+            containerManagerService.increaseRemovalPriority(container);
             codeResultBuilder.clear().appendExceptions(String.format("Your code failed to execute in the permitted time of %d seconds", timeout));
         }
 

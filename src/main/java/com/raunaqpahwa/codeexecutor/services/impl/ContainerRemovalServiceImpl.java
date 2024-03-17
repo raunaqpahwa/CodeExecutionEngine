@@ -1,15 +1,14 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.ContainerRemovalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ContainerRemovalServiceImpl implements ContainerRemovalService {
@@ -18,43 +17,22 @@ public class ContainerRemovalServiceImpl implements ContainerRemovalService {
 
     private final DockerClient client;
 
-    private final Queue<Container> containerQueue;
-
-    private final AtomicInteger removalTasks;
-
-    ContainerRemovalServiceImpl(DockerClient client, Queue<Container> containerQueue) {
+    ContainerRemovalServiceImpl(DockerClient client) {
         this.client = client;
-        this.containerQueue = containerQueue;
-        this.removalTasks = new AtomicInteger(0);
     }
 
     @Override
     @Async(value = "ContainerRemoval")
-    public void stopAndRemoveContainer(Container container) {
+    public CompletableFuture<Boolean> stopAndRemoveContainer(DockerContainer container) {
         try {
-            client.stopContainerCmd(container.getId()).exec();
-            client.removeContainerCmd(container.getId()).exec();
+            client.stopContainerCmd(container.getContainer().getId()).exec();
+            client.removeContainerCmd(container.getContainer().getId()).exec();
+            logger.info("Successfully removed the {} container with id {}", container.getLanguage().name(), container.getContainer().getId());
+            return CompletableFuture.completedFuture(true);
         } catch (Exception e) {
-            logger.error("An error occurred while removing container {}", container.getId());
-            synchronized (containerQueue) {
-                containerQueue.offer(container);
-            }
-        } finally {
-            decrementRemovalTasks();
+            logger.error("An error {} occurred while removing {} container with id {}", e.getMessage(), container.getLanguage().name(),
+                    container.getContainer().getId());
         }
-    }
-
-    @Override
-    public int getRemovalTasks() {
-        return removalTasks.get();
-    }
-
-    @Override
-    public void incrementRemovalTasks() {
-        removalTasks.incrementAndGet();
-    }
-
-    private void decrementRemovalTasks() {
-        removalTasks.decrementAndGet();
+        return CompletableFuture.completedFuture(false);
     }
 }

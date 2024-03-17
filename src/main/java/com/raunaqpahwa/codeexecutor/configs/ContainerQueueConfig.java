@@ -1,6 +1,6 @@
 package com.raunaqpahwa.codeexecutor.configs;
 
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,7 +12,8 @@ import java.util.Queue;
 public class ContainerQueueConfig {
 
     @Bean
-    public Queue<Container> createContainerQueue() {
-        return new PriorityQueue<>(Comparator.comparing(Container::getCreated));
+    public Queue<DockerContainer> createContainerQueue() {
+        return new PriorityQueue<>(Comparator.comparing(DockerContainer::getRemovalPriority)
+                .thenComparing(c -> c.getContainer().getCreated()));
     }
 }

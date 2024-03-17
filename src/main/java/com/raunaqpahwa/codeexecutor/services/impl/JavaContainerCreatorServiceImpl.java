@@ -1,39 +1,46 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.HostConfig;
 import com.raunaqpahwa.codeexecutor.models.Constants;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.models.ImageInfo;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
-@Service(Constants.CREATE_JAVA)
-public class JavaContainerCreatorServiceImpl implements ContainerCreatorService {
+@Service(Constants.JAVA)
+public class JavaContainerCreatorServiceImpl extends ContainerCreatorService {
 
     private static final long MAX_MEMORY = 100 * 1024 * 1024;
 
-    private final DockerClient client;
+    private static final String IMAGE_NAME = ImageInfo.JAVA.getNameWithTag();
+
+    private static final String WORK_DIR = Constants.JAVA_WORK_DIR;
+
+    private static final DockerContainer.Language LANGUAGE = DockerContainer.Language.JAVA;
+
+    private static final int MAX_CONTAINERS = 10;
 
     JavaContainerCreatorServiceImpl(DockerClient client) {
-        this.client = client;
+        super(client, MAX_CONTAINERS);
     }
+
     @Override
-    public Container createContainer() {
-        var hostConfig = HostConfig.newHostConfig().withMemory(MAX_MEMORY);
-        var containerCmd = client.createContainerCmd(ImageInfo.JAVA.getNameWithTag())
-                .withNetworkDisabled(true)
-                .withTty(true)
-                .withWorkingDir(Constants.JAVA_WORK_DIR)
-                .withHostConfig(hostConfig);
-        var createContainerResponse = containerCmd.exec();
-        // TODO: Add container not created error in throw
-        return Optional.ofNullable(createContainerResponse)
-                .map(v -> client.listContainersCmd().withShowAll(true).withIdFilter(List.of(v.getId()))
-                        .exec().stream().findFirst().orElseThrow())
-                .orElseThrow();
+    public String getImageName() {
+        return IMAGE_NAME;
+    }
+
+    @Override
+    public String getWorkDir() {
+        return WORK_DIR;
+    }
+
+    @Override
+    public long getMaxMemory() {
+        return MAX_MEMORY;
+    }
+
+    @Override
+    public DockerContainer.Language getLanguage() {
+        return LANGUAGE;
     }
 }

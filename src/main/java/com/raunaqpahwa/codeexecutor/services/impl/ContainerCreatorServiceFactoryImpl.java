@@ -1,6 +1,6 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorService;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorServiceFactory;
 import org.springframework.stereotype.Component;
@@ -25,8 +25,14 @@ public class ContainerCreatorServiceFactoryImpl implements ContainerCreatorServi
     }
 
     @Override
-    public Container createContainer(String language) {
+    public DockerContainer createContainer(String language) {
         var containerCreatorService = getContainerCreatorService(language);
         return containerCreatorService.createContainer();
+    }
+
+    @Override
+    public void incrementAvailableContainers(DockerContainer container) {
+        var containerCreatorService = getContainerCreatorService(container.getLanguage().name());
+        containerCreatorService.incrementAvailableContainers();
     }
 }

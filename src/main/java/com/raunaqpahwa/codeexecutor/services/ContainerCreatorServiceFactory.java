@@ -1,8 +1,10 @@
 package com.raunaqpahwa.codeexecutor.services;
 
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 
 public interface ContainerCreatorServiceFactory {
 
-    Container createContainer(String language);
+    DockerContainer createContainer(String language);
+
+    void incrementAvailableContainers(DockerContainer container);
 }

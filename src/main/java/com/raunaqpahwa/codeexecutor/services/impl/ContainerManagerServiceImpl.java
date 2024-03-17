@@ -1,7 +1,7 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorServiceFactory;
 import com.raunaqpahwa.codeexecutor.services.ContainerManagerService;
 import com.raunaqpahwa.codeexecutor.services.ContainerRemovalService;
@@ -24,10 +24,9 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
 
     private final ContainerRemovalService containerRemovalService;
 
-    private final Queue<Container> containerQueue;
+    private final Queue<DockerContainer> containerQueue;
 
-    ContainerManagerServiceImpl(ContainerCreatorServiceFactory containerCreatorServiceFactory, DockerClient client,
-                                Queue<Container> containerQueue, ContainerRemovalService containerRemovalService) {
+    ContainerManagerServiceImpl(ContainerCreatorServiceFactory containerCreatorServiceFactory, DockerClient client, Queue<DockerContainer> containerQueue, ContainerRemovalService containerRemovalService) {
         this.client = client;
         this.containerCreatorServiceFactory = containerCreatorServiceFactory;
         this.containerQueue = containerQueue;
@@ -35,8 +34,11 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
     }
 
     @Override
-    public Container createContainer(String language) {
+    public DockerContainer createContainer(String language) {
         var container = containerCreatorServiceFactory.createContainer(language);
+        if (container == null) {
+            throw new IllegalStateException("Could not create docker container");
+        }
         synchronized (containerQueue) {
             containerQueue.offer(container);
         }
@@ -44,24 +46,37 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
     }
 
     @Override
-    public void startContainer(Container container) {
-        client.startContainerCmd(container.getId()).exec();
+    public void startContainer(DockerContainer container) {
+        var containerId = container.getContainer().getId();
+        client.startContainerCmd(containerId).exec();
     }
 
+    @Override
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
     public void stopAndRemoveContainers() {
-        long currentTime = System.currentTimeMillis() / 1000;
-        logger.info("Current removal tasks {}", containerRemovalService.getRemovalTasks());
+        var currentTime = (double) System.currentTimeMillis() / 1000.0;
         while (!containerQueue.isEmpty()) {
             var container = containerQueue.peek();
-            double timeDiffInSeconds = currentTime - container.getCreated();
-            if (timeDiffInSeconds >= 10 && containerRemovalService.getRemovalTasks() < 100) {
-                containerRemovalService.incrementRemovalTasks();
+            var timeDiffInSeconds = currentTime - container.getContainer().getCreated();
+            if (timeDiffInSeconds >= 15) {
                 containerQueue.poll();
-                containerRemovalService.stopAndRemoveContainer(container);
+                containerRemovalService.stopAndRemoveContainer(container).thenAccept(isRemoved -> {
+                    if (isRemoved) {
+                        containerCreatorServiceFactory.incrementAvailableContainers(container);
+                    } else {
+                        containerQueue.offer(container);
+                    }
+                });
             } else {
                 break;
             }
         }
+    }
+
+    public void increaseRemovalPriority(DockerContainer container) {
+        logger.info("Increasing priority of container {}", container.getContainer().getId());
+        containerQueue.remove(container);
+        container.setRemovalPriority(DockerContainer.RemovalPriority.HIGH);
+        containerQueue.offer(container);
     }
 }

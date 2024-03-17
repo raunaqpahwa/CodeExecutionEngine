@@ -1,12 +1,14 @@
 package com.raunaqpahwa.codeexecutor.services;
 
-import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 
 public interface ContainerManagerService {
 
-    Container createContainer(String language);
+    DockerContainer createContainer(String language);
 
-    void startContainer(Container container);
+    void startContainer(DockerContainer container);
 
     void stopAndRemoveContainers();
+
+    void increaseRemovalPriority(DockerContainer container);
 }

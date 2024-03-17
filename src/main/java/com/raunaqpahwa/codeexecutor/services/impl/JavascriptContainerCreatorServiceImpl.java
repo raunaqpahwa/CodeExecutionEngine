@@ -1,41 +1,46 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.HostConfig;
 import com.raunaqpahwa.codeexecutor.models.Constants;
+import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.models.ImageInfo;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
-@Service(Constants.CREATE_JAVASCRIPT)
-public class JavascriptContainerCreatorServiceImpl implements ContainerCreatorService {
+@Service(Constants.JAVASCRIPT)
+public class JavascriptContainerCreatorServiceImpl extends ContainerCreatorService {
 
     private static final long MAX_MEMORY = 100 * 1024 * 1024;
 
-    private final DockerClient client;
+    private static final String IMAGE_NAME = ImageInfo.JAVASCRIPT.getNameWithTag();
+
+    private static final String WORK_DIR = Constants.JAVASCRIPT_WORK_DIR;
+
+    private static final DockerContainer.Language LANGUAGE = DockerContainer.Language.JAVASCRIPT;
+
+    private static final int MAX_CONTAINERS = 10;
 
     JavascriptContainerCreatorServiceImpl(DockerClient client) {
-        this.client = client;
+        super(client, MAX_CONTAINERS);
     }
-    @Override
-    public Container createContainer() {
-        var hostConfig = HostConfig.newHostConfig().withMemory(MAX_MEMORY);
-        CreateContainerCmd containerCmd = client.createContainerCmd(ImageInfo.JAVASCRIPT.getNameWithTag())
-                .withNetworkDisabled(true)
-                .withTty(true)
-                .withWorkingDir(Constants.JAVASCRIPT_WORK_DIR)
-                .withHostConfig(hostConfig);
 
-        var createContainerResponse = containerCmd.exec();
-        // TODO: Add container not created error in throw
-        return Optional.ofNullable(createContainerResponse)
-                .map(v -> client.listContainersCmd().withShowAll(true).withIdFilter(List.of(v.getId()))
-                        .exec().stream().findFirst().orElseThrow())
-                .orElseThrow();
+    @Override
+    public String getImageName() {
+        return IMAGE_NAME;
+    }
+
+    @Override
+    public String getWorkDir() {
+        return WORK_DIR;
+    }
+
+    @Override
+    public long getMaxMemory() {
+        return MAX_MEMORY;
+    }
+
+    @Override
+    public DockerContainer.Language getLanguage() {
+        return LANGUAGE;
     }
 }
