@@ -1,5 +1,7 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
+import com.raunaqpahwa.codeexecutor.exceptions.ContainerNotCreatedException;
+import com.raunaqpahwa.codeexecutor.models.Constants;
 import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorService;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorServiceFactory;
@@ -19,13 +21,13 @@ public class ContainerCreatorServiceFactoryImpl implements ContainerCreatorServi
     private ContainerCreatorService getContainerCreatorService(String language) {
         var containerCreatorService = containerCreatorServiceMap.get(language);
         if (containerCreatorService == null) {
-            throw new UnsupportedOperationException("This language is not supported");
+            throw new UnsupportedOperationException(Constants.LANGUAGE_UNSUPPORTED);
         }
         return containerCreatorService;
     }
 
     @Override
-    public DockerContainer createContainer(String language) {
+    public DockerContainer createContainer(String language) throws ContainerNotCreatedException {
         var containerCreatorService = getContainerCreatorService(language);
         return containerCreatorService.createContainer();
     }

@@ -2,6 +2,9 @@ package com.raunaqpahwa.codeexecutor.services;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.raunaqpahwa.codeexecutor.exceptions.CodeSizeLimitException;
+import com.raunaqpahwa.codeexecutor.exceptions.ContainerNotCreatedException;
+import com.raunaqpahwa.codeexecutor.exceptions.TimeLimitException;
 import com.raunaqpahwa.codeexecutor.models.CodeResult;
 import com.raunaqpahwa.codeexecutor.models.Constants;
 import com.raunaqpahwa.codeexecutor.models.DockerContainer;
@@ -34,18 +37,19 @@ public abstract class CodeExecutionService {
         return ((double) codeBytes.length / (1024 * 1024));
     }
 
-    public CodeResult executeCode(String rawCode) {
+    public CodeResult executeCode(String rawCode) throws CodeSizeLimitException,
+            TimeLimitException, ContainerNotCreatedException {
         var container = containerManagerService.createContainer(getContainerType());
         containerManagerService.startContainer(container);
         var codeSize = codeSizeMb(rawCode);
         var escapeFunc = getEscapeFunc();
         if (codeSize > Constants.CODE_SIZE_LIMIT) {
-            // TODO: Throw exception if code size beyond limit
+            throw new CodeSizeLimitException(Constants.CODE_SIZE_LIMIT_EXCEPTION);
         }
         return executeCodeInContainer(container, escapeFunc.apply(rawCode));
     }
 
-    private CodeResult executeCodeInContainer(DockerContainer container, String rawCode) {
+    private CodeResult executeCodeInContainer(DockerContainer container, String rawCode) throws TimeLimitException {
         var codeResultBuilder = new CodeResult.Builder();
         var resultCallbackTemplate = new CodeExecutorResultCallback(codeResultBuilder);
         var execCreateCmdResponse = createExecCmd(container.getContainer().getId(), rawCode);
@@ -56,12 +60,12 @@ public abstract class CodeExecutionService {
             result = client.execStartCmd(execCreateCmdResponse.getId()).exec(resultCallbackTemplate)
                     .awaitCompletion(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            codeResultBuilder.appendExceptions(e.toString());
+            codeResultBuilder.appendExceptions(e.getMessage());
         }
 
         if (!result) {
             containerManagerService.increaseRemovalPriority(container);
-            codeResultBuilder.clear().appendExceptions(String.format("Your code failed to execute in the permitted time of %d seconds", timeout));
+            throw new TimeLimitException(String.format(Constants.TIME_LIMIT_EXCEPTION, timeout));
         }
 
         return codeResultBuilder.build();

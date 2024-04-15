@@ -1,6 +1,8 @@
 package com.raunaqpahwa.codeexecutor.services.impl;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.model.Container;
+import com.raunaqpahwa.codeexecutor.exceptions.ContainerNotCreatedException;
 import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 import com.raunaqpahwa.codeexecutor.services.ContainerCreatorServiceFactory;
 import com.raunaqpahwa.codeexecutor.services.ContainerManagerService;
@@ -10,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
@@ -34,11 +37,8 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
     }
 
     @Override
-    public DockerContainer createContainer(String language) {
+    public DockerContainer createContainer(String language) throws ContainerNotCreatedException {
         var container = containerCreatorServiceFactory.createContainer(language);
-        if (container == null) {
-            throw new IllegalStateException("Could not create docker container");
-        }
         synchronized (containerQueue) {
             containerQueue.offer(container);
         }
@@ -58,15 +58,31 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
         while (!containerQueue.isEmpty()) {
             var container = containerQueue.peek();
             var timeDiffInSeconds = currentTime - container.getContainer().getCreated();
-            if (timeDiffInSeconds >= 15) {
+            if (timeDiffInSeconds >= 30) {
                 containerQueue.poll();
-                containerRemovalService.stopAndRemoveContainer(container).thenAccept(isRemoved -> {
+                containerRemovalService.stopAndRemoveContainer(container.getContainer()).thenAccept(isRemoved -> {
                     if (isRemoved) {
                         containerCreatorServiceFactory.incrementAvailableContainers(container);
                     } else {
                         containerQueue.offer(container);
                     }
                 });
+            } else {
+                break;
+            }
+        }
+    }
+
+    @Override
+    @Scheduled(fixedRate = 10, timeUnit = TimeUnit.MINUTES)
+    public void stopAndRemoveGhostContainers() {
+        var currentTime = (double) System.currentTimeMillis() / 1000.0;
+        var containers = client.listContainersCmd().exec();
+        containers.sort(Comparator.comparing(Container::getCreated));
+        for (var container: containers) {
+            var timeDiffInMinutes = (currentTime - container.getCreated()) / 60.0;
+            if (timeDiffInMinutes >= 10) {
+                containerRemovalService.stopAndRemoveContainer(container);
             } else {
                 break;
             }

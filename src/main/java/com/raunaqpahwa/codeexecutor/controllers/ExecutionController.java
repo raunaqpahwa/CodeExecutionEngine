@@ -1,5 +1,8 @@
 package com.raunaqpahwa.codeexecutor.controllers;
 
+import com.raunaqpahwa.codeexecutor.exceptions.CodeSizeLimitException;
+import com.raunaqpahwa.codeexecutor.exceptions.ContainerNotCreatedException;
+import com.raunaqpahwa.codeexecutor.exceptions.TimeLimitException;
 import com.raunaqpahwa.codeexecutor.models.Code;
 import com.raunaqpahwa.codeexecutor.models.CodeResult;
 import com.raunaqpahwa.codeexecutor.models.Constants;
@@ -22,17 +25,20 @@ class ExecutionController {
     }
 
     @PostMapping(value = "/python")
-    public CodeResult executePythonCode(@RequestBody Code code) {
+    public CodeResult executePythonCode(@RequestBody Code code) throws CodeSizeLimitException,
+            TimeLimitException, ContainerNotCreatedException {
         return codeExecutionFactory.executeCode(Constants.EXECUTE_PYTHON, code.getRawCode());
     }
 
     @PostMapping(value = "/java")
-    public CodeResult executeJavaCode(@RequestBody Code code) {
+    public CodeResult executeJavaCode(@RequestBody Code code) throws CodeSizeLimitException,
+            TimeLimitException, ContainerNotCreatedException {
         return codeExecutionFactory.executeCode(Constants.EXECUTE_JAVA, code.getRawCode());
     }
 
     @PostMapping(value = "/javascript")
-    public CodeResult executeJavascriptCode(@RequestBody Code code) {
+    public CodeResult executeJavascriptCode(@RequestBody Code code) throws CodeSizeLimitException,
+            TimeLimitException, ContainerNotCreatedException {
         return codeExecutionFactory.executeCode(Constants.EXECUTE_JAVASCRIPT, code.getRawCode());
     }
 

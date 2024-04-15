@@ -4,7 +4,6 @@ public class Constants {
     // Generic
     public static final String BASH = "bash";
     public static final String LITERAL = "-c";
-
     public static final int CODE_SIZE_LIMIT = 1;
 
     // Java
@@ -25,4 +24,10 @@ public class Constants {
     public static final String EXECUTE_JAVASCRIPT = "EXECUTE_JAVASCRIPT";
     public static final String JAVASCRIPT_FILE = "index.js";
     public static final String JAVASCRIPT_WORK_DIR = "/home";
+
+    // Exceptions
+    public static final String CODE_SIZE_LIMIT_EXCEPTION = "The code size is too long to be executed. Please reduce the lines of code and try again.";
+    public static final String TIME_LIMIT_EXCEPTION = "Your code failed to execute in the permitted time of %d seconds.";
+    public static final String CONTAINER_NOT_CREATED_EXCEPTION = "The server is busy, the docker container could not be created.";
+    public static final String LANGUAGE_UNSUPPORTED = "This programming language is not supported.";
 }

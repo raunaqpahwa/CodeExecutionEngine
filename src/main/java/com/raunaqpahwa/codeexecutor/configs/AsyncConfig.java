@@ -12,9 +12,9 @@ public class AsyncConfig {
     @Bean(name = "ContainerRemoval")
     public ThreadPoolTaskExecutor asyncExecutor() {
         var executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(8);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(6);
+        executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("ContainerRemovalThread::");
         executor.initialize();
         return executor;

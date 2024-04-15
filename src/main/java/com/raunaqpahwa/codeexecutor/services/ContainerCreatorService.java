@@ -3,6 +3,8 @@ package com.raunaqpahwa.codeexecutor.services;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.HostConfig;
+import com.raunaqpahwa.codeexecutor.exceptions.ContainerNotCreatedException;
+import com.raunaqpahwa.codeexecutor.models.Constants;
 import com.raunaqpahwa.codeexecutor.models.DockerContainer;
 
 import java.util.List;
@@ -20,7 +22,7 @@ public abstract class ContainerCreatorService {
         this.availableContainers = new AtomicInteger(maxContainers);
     }
 
-    public DockerContainer createContainer() {
+    public DockerContainer createContainer() throws ContainerNotCreatedException {
         int currentValue = getAvailableContainers();
         int newValue =  currentValue - 1;
         if (currentValue > 0 && availableContainers.compareAndSet(currentValue, newValue)) {
@@ -39,7 +41,7 @@ public abstract class ContainerCreatorService {
                                 .exec().stream().findFirst().orElseThrow();
                         return new DockerContainer(container, getLanguage(), DockerContainer.RemovalPriority.LOW);
                     })
-                    .orElseThrow();
+                    .orElseThrow(() -> new ContainerNotCreatedException(Constants.CONTAINER_NOT_CREATED_EXCEPTION));
         }
         return null;
     }
