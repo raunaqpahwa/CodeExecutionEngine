@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -55,21 +56,29 @@ public class ContainerManagerServiceImpl implements ContainerManagerService {
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
     public void stopAndRemoveContainers() {
         var currentTime = (double) System.currentTimeMillis() / 1000.0;
-        while (!containerQueue.isEmpty()) {
-            var container = containerQueue.peek();
-            var timeDiffInSeconds = currentTime - container.getContainer().getCreated();
-            if (timeDiffInSeconds >= 30) {
-                containerQueue.poll();
-                containerRemovalService.stopAndRemoveContainer(container.getContainer()).thenAccept(isRemoved -> {
-                    if (isRemoved) {
-                        containerCreatorServiceFactory.incrementAvailableContainers(container);
-                    } else {
+        var containersToRemove = new ArrayList<DockerContainer>();
+        synchronized (containerQueue) {
+            int numContainersToRemove = Math.min(containerQueue.size(), 3);
+            for (int i = 0; i < numContainersToRemove; i++) {
+                var container = containerQueue.peek();
+                var timeDiffInSeconds = currentTime - container.getContainer().getCreated();
+                if (timeDiffInSeconds >= 10) {
+                    containersToRemove.add(containerQueue.poll());
+                } else {
+                    break;
+                }
+            }
+        }
+        for (var container: containersToRemove) {
+            containerRemovalService.stopAndRemoveContainer(container.getContainer()).thenAccept(isRemoved -> {
+                if (isRemoved) {
+                    containerCreatorServiceFactory.incrementAvailableContainers(container);
+                } else {
+                    synchronized (containerQueue) {
                         containerQueue.offer(container);
                     }
-                });
-            } else {
-                break;
-            }
+                }
+            });
         }
     }
 

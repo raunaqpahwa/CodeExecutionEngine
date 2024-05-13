@@ -43,7 +43,7 @@ public abstract class ContainerCreatorService {
                     })
                     .orElseThrow(() -> new ContainerNotCreatedException(Constants.CONTAINER_NOT_CREATED_EXCEPTION));
         }
-        return null;
+        throw new ContainerNotCreatedException(Constants.CONTAINER_NOT_CREATED_EXCEPTION);
     }
 
     public int getAvailableContainers() {

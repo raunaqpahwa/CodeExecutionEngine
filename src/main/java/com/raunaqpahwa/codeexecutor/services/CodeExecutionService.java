@@ -39,13 +39,14 @@ public abstract class CodeExecutionService {
 
     public CodeResult executeCode(String rawCode) throws CodeSizeLimitException,
             TimeLimitException, ContainerNotCreatedException {
-        var container = containerManagerService.createContainer(getContainerType());
-        containerManagerService.startContainer(container);
         var codeSize = codeSizeMb(rawCode);
-        var escapeFunc = getEscapeFunc();
         if (codeSize > Constants.CODE_SIZE_LIMIT) {
             throw new CodeSizeLimitException(Constants.CODE_SIZE_LIMIT_EXCEPTION);
         }
+        var container = containerManagerService.createContainer(getContainerType());
+        containerManagerService.startContainer(container);
+
+        var escapeFunc = getEscapeFunc();
         return executeCodeInContainer(container, escapeFunc.apply(rawCode));
     }
 
