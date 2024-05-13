@@ -74,9 +74,10 @@ public class ContainerManagerServiceImplTest {
     public void testRemoveContainers() {
         var container = mock(Container.class);
         var dockerContainer = mock(DockerContainer.class);
-        // Return true after one container has been removed otherwise it results in an infinite test loop
-        when(containerQueue.isEmpty()).thenReturn(false).thenReturn(true);
+
+        when(containerQueue.size()).thenReturn(1);
         when(containerQueue.peek()).thenReturn(dockerContainer);
+        when(containerQueue.poll()).thenReturn(dockerContainer);
         when(dockerContainer.getContainer()).thenReturn(container);
         when(dockerContainer.getContainer().getCreated()).thenReturn(1713053680L);
         when(containerRemovalService.stopAndRemoveContainer(dockerContainer.getContainer()))
@@ -84,7 +85,6 @@ public class ContainerManagerServiceImplTest {
 
         containerManagerService.stopAndRemoveContainers();
         verify(containerCreatorServiceFactory).incrementAvailableContainers(dockerContainer);
-        verify(containerQueue).poll();
     }
 
     @Test
@@ -93,18 +93,17 @@ public class ContainerManagerServiceImplTest {
         var container = mock(Container.class);
         var dockerContainer = mock(DockerContainer.class);
 
-        when(containerQueue.isEmpty()).thenReturn(false).thenReturn(false).thenReturn(true);
+        when(containerQueue.size()).thenReturn(1);
         when(containerQueue.peek()).thenReturn(dockerContainer);
+        when(containerQueue.poll()).thenReturn(dockerContainer);
         when(dockerContainer.getContainer()).thenReturn(container);
         when(dockerContainer.getContainer().getCreated()).thenReturn(1713053680L);
         when(containerRemovalService.stopAndRemoveContainer(dockerContainer.getContainer()))
-                .thenReturn(CompletableFuture.completedFuture(false))
-                .thenReturn(CompletableFuture.completedFuture(true));
+                .thenReturn(CompletableFuture.completedFuture(false));
 
         containerManagerService.stopAndRemoveContainers();
-        verify(containerCreatorServiceFactory).incrementAvailableContainers(dockerContainer);
-        verify(containerQueue, times(2)).peek();
-        verify(containerQueue, times(2)).poll();
+        verify(containerQueue, times(1)).peek();
+        verify(containerQueue, times(1)).poll();
         verify(containerQueue).offer(dockerContainer);
     }
 
